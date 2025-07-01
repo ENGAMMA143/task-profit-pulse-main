@@ -24,7 +24,7 @@ export const AuthForm = () => {
     setError('');
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -34,30 +34,42 @@ export const AuthForm = () => {
         }
       });
 
-      if (error) throw error;
+      if (signUpError) {
+        // Handle specific Supabase errors, e.g., rate limit
+        if (signUpError.message.includes("For security purposes, you can only request this after")) {
+          setError("Too many requests. Please wait a moment before trying again.");
+        } else {
+          setError(signUpError.message);
+        }
+        return; // Stop execution if signup fails
+      }
+
+      // If signup is successful, the database trigger will create the profile.
+      // We no longer need to insert into the 'profiles' table from the client-side.
 
       if (data.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            username: username,
-            email: email,
-            current_balance: 0,
-            total_deposited: 0,
-            total_profit: 0,
-            current_level: 'bronze'
-          });
-
-        if (profileError) throw profileError;
-
+        // User successfully created in auth.users table.
+        // The database trigger 'handle_new_user' will automatically create the profile in 'public.profiles'.
         toast({
           title: "Account Created Successfully!",
           description: "Welcome to TaskProfit. You can now start your investment journey.",
         });
+        // TODO: Add navigation logic here, e.g., navigate('/dashboard');
+        // If email confirmation is enabled, you might want to redirect to a verification message page.
+        // Example: window.location.href = '/verify-email';
+
+      } else if (data.session === null) {
+        // This typically means email confirmation is required.
+        toast({
+          title: "Account Created!",
+          description: "Please check your email to verify your account and log in.",
+        });
+        // Optionally, redirect to a page informing the user to verify their email
+        // window.location.href = '/check-email';
       }
+
     } catch (error: any) {
+      // Catch any unexpected errors during the process
       setError(error.message);
     } finally {
       setLoading(false);
@@ -307,4 +319,3 @@ export const AuthForm = () => {
     </div>
   );
 };
-
