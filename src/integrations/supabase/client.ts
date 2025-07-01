@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 // Import URL and Key from your environment variables file
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './env';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 
 export const supabase = createClient<Database>(
   SUPABASE_URL,
