@@ -255,9 +255,9 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
           {/* Step 1: Level Selection */}
           {depositStep === 'select-level' && (
             <div className="space-y-4">
-              <Alert className="border-blue-200 bg-blue-50">
-                <AlertTriangle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
+              <Alert className="border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-200">
+                <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertDescription className="text-blue-800 dark:text-blue-200">
                   You must select an investment level before proceeding with your deposit.
                 </AlertDescription>
               </Alert>
@@ -277,14 +277,14 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
               </div>
 
               {selectedLevelDetails && (
-                <div className={`bg-${selectedLevelDetails.color}-50 p-4 rounded-lg border border-${selectedLevelDetails.color}-200`}>
-                  <h4 className={`font-semibold text-${selectedLevelDetails.color}-900 mb-2`}>
+                <div className={`bg-${selectedLevelDetails.color}-50 p-4 rounded-lg border border-${selectedLevelDetails.color}-200 dark:bg-${selectedLevelDetails.color}-950 dark:border-${selectedLevelDetails.color}-700`}>
+                  <h4 className={`font-semibold text-${selectedLevelDetails.color}-900 mb-2 dark:text-${selectedLevelDetails.color}-200`}>
                     Selected Level: {level.toUpperCase()}
                   </h4>
-                  <p className={`text-sm text-${selectedLevelDetails.color}-800`}>
+                  <p className={`text-sm text-${selectedLevelDetails.color}-800 dark:text-${selectedLevelDetails.color}-300`}>
                     Deposit Range: ${selectedLevelDetails.min} - ${selectedLevelDetails.max}
                   </p>
-                  <p className={`text-sm text-${selectedLevelDetails.color}-800 mt-1`}>
+                  <p className={`text-sm text-${selectedLevelDetails.color}-800 mt-1 dark:text-${selectedLevelDetails.color}-300`}>
                     Daily Tasks: 10 | Daily Earnings: $1-$10
                   </p>
                 </div>
@@ -299,17 +299,17 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
           {/* Step 2: Copy Address */}
           {depositStep === 'copy-address' && (
             <div className="space-y-4">
-              <Alert className="border-orange-200 bg-orange-50">
-                <Copy className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-orange-800">
+              <Alert className="border-orange-200 bg-orange-50 dark:border-orange-700 dark:bg-orange-950 dark:text-orange-200">
+                <Copy className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                <AlertDescription className="text-orange-800 dark:text-orange-200">
                   You must copy our Binance address before proceeding with your deposit.
                 </AlertDescription>
               </Alert>
 
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-900 mb-2">Binance Deposit Address (USDT TRC20)</h3>
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 dark:bg-blue-950 dark:border-blue-700">
+                <h3 className="font-semibold text-blue-900 mb-2 dark:text-blue-200">Binance Deposit Address (USDT TRC20)</h3>
                 <div className="flex items-center space-x-2">
-                  <code className="bg-white px-3 py-2 rounded border flex-1 text-sm font-mono">
+                  <code className="bg-white px-3 py-2 rounded border flex-1 text-sm font-mono break-all whitespace-normal dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700">
                     {binanceDepositAddress}
                   </code>
                   <Button
@@ -321,17 +321,17 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
                     {addressCopied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
-                <p className="text-sm text-blue-700 mt-2">
+                <p className="text-sm text-blue-700 mt-2 dark:text-blue-300">
                   ⚠️ Only send USDT (TRC20) to this address. Other tokens will be lost permanently.
                 </p>
               </div>
 
               {selectedLevelDetails && (
-                <div className={`bg-${selectedLevelDetails.color}-50 p-4 rounded-lg border border-${selectedLevelDetails.color}-200`}>
-                  <h4 className={`font-semibold text-${selectedLevelDetails.color}-900 mb-2`}>
+                <div className={`bg-${selectedLevelDetails.color}-50 p-4 rounded-lg border border-${selectedLevelDetails.color}-200 dark:bg-${selectedLevelDetails.color}-950 dark:border-${selectedLevelDetails.color}-700`}>
+                  <h4 className={`font-semibold text-${selectedLevelDetails.color}-900 mb-2 dark:text-${selectedLevelDetails.color}-200`}>
                     Deposit Instructions for {level.toUpperCase()} Level
                   </h4>
-                  <p className={`text-sm text-${selectedLevelDetails.color}-800`}>
+                  <p className={`text-sm text-${selectedLevelDetails.color}-800 dark:text-${selectedLevelDetails.color}-300`}>
                     Send between ${selectedLevelDetails.min} - ${selectedLevelDetails.max} USDT to the address above
                   </p>
                 </div>
@@ -348,16 +348,16 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
           {/* Step 3: Confirm Deposit */}
           {depositStep === 'confirm-deposit' && (
             <div className="space-y-4">
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
+              <Alert className="border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-950 dark:text-green-200">
+                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
                   Address copied! Now send your deposit and click confirm below.
                 </AlertDescription>
               </Alert>
 
-              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                <h4 className="font-semibold text-yellow-900 mb-2">Before Confirming:</h4>
-                <ul className="text-sm text-yellow-800 space-y-1">
+              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 dark:bg-yellow-950 dark:border-yellow-700">
+                <h4 className="font-semibold text-yellow-900 mb-2 dark:text-yellow-200">Before Confirming:</h4>
+                <ul className="text-sm text-yellow-800 space-y-1 dark:text-yellow-300">
                   <li>✓ You have sent USDT (TRC20) to our Binance address</li>
                   <li>✓ The amount is within your selected level range</li>
                   <li>✓ You have the transaction hash for reference</li>
@@ -375,38 +375,17 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
           {depositStep === 'processing' && (
             <div className="space-y-4">
               <div className="text-center py-8">
-                <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Checking Your Deposit...</h3>
-                <p className="text-gray-600 mb-4">
+                <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600 dark:text-blue-400 mb-4" />
+                <h3 className="text-lg font-semibold mb-2 dark:text-gray-200">Checking Your Deposit...</h3>
+                <p className="text-gray-600 mb-4 dark:text-gray-400">
                   We're verifying your deposit with Binance. This usually takes 1-5 minutes.
                 </p>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <Clock className="h-5 w-5 text-blue-600 mx-auto mb-2" />
-                  <p className="text-sm text-blue-800">
+                <div className="bg-blue-50 p-4 rounded-lg dark:bg-blue-950 dark:border-blue-700">
+                  <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
                     Please wait while we confirm your transaction...
                   </p>
                 </div>
               </div>
-            </div>
-          )}
-
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {success && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                🎉 Deposit confirmed successfully! Your tasks are now available and you can start earning!
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
+         
+(Content truncated due to size limit. Use line ranges to read in chunks)
