@@ -4,9 +4,11 @@ export const config = { runtime: 'edge', regions: ['fra1'] };
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY
 );
+
+
 export default async function handler(req) {
   if (req.method !== 'POST') return new Response(null, { status: 405 });
   const userId = await getUserId(req);
