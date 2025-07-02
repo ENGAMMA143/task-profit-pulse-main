@@ -61,6 +61,11 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "zod": "^3.23.8"
+    "@binance/connector": "^3.0.0",
+    "@supabase/supabase-js": "^2.x.x",
+    "express": "^4.x.x", // We'll use express for routing within the function
+    "body-parser": "^1.x.x", // For parsing request bodies
+    "cors": "^2.x.x" // For handling CORS if needed
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
