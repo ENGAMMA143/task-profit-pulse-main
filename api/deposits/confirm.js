@@ -1,7 +1,13 @@
 // api/deposits/confirm.js
 export const config = { runtime: 'edge', regions: ['fra1'] };
 
-import { supabase } from '../../src/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
+
 
 export default async function handler() {
   // جلب جميع الإيداعات المعلقة
