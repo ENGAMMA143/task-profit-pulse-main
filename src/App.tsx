@@ -1,5 +1,5 @@
 import { Toaster as SonnerToaster } from "sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Provider as TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
