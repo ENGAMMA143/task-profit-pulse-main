@@ -9,7 +9,6 @@
 "build:dev": "vite build --mode development",
 "lint": "eslint .",
 "preview": "vite preview",
-"listen-binance": "node ws-listener.cjs"
 },
 "dependencies": {
 "@hookform/resolvers": "^3.9.0",
