@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x",
+      "includeFiles": [
+        "src/lib/supabase.js",
+        ".env.local"
+      ]
+    }
+  },
+  "build": {
+    "env": {
+      "SUPABASE_URL": "@supabase_url",
+      "SUPABASE_KEY": "@supabase_key"
+    }
+  }
+}
