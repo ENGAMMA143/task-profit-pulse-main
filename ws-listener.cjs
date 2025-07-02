@@ -1,5 +1,6 @@
-// ws-listener.js
-require('dotenv').config();        // إن كنت تستخدم ملف .env محلياً
+// ws-listener.cjs
+
+// ✂️ حذف dotenv—ENV vars جاهزة على Render
 const WebSocket = require('ws');
 const fetch = require('node-fetch');
 const crypto = require('crypto');
@@ -20,8 +21,6 @@ async function start() {
   ws.on('open', () => console.log('⚡ WebSocket connected'));
   ws.on('message', async raw => {
     const event = JSON.parse(raw);
-
-    // مثال: نرسل كل balanceUpdate أو executionReport
     if (['balanceUpdate','outboundAccountPosition','executionReport'].includes(event.e)) {
       const payload = JSON.stringify(event);
       const signature = crypto
@@ -29,7 +28,7 @@ async function start() {
         .update(payload)
         .digest('hex');
 
-      await fetch(`${process.env.WEBHOOK_ENDPOINT}`, {
+      await fetch(process.env.WEBHOOK_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +40,7 @@ async function start() {
   });
 
   ws.on('close', () => {
-    console.warn('WebSocket closed – reconnecting in 1s…');
+    console.warn('WebSocket closed – reconnecting…');
     setTimeout(start, 1000);
   });
 
