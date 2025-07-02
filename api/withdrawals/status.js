@@ -1,7 +1,7 @@
 // api/withdrawals/status.js
 export const config = { runtime: 'edge', regions: ['fra1'] };
 
-import { supabase, getUserId } from '../../src/lib/supabase';
+import { supabase, getUserId } from '@supabase/supabase-js';
 
 export default async function handler(req) {
   if (req.method !== 'GET') return new Response(null, { status: 405 });
