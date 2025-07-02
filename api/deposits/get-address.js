@@ -1,8 +1,12 @@
 // api/deposits/get-address.js
 export const config = { runtime: 'edge', regions: ['fra1'] };
 
-import { supabase, getUserId } from '../../src/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 export default async function handler(req) {
   if (req.method !== 'POST') return new Response(null, { status: 405 });
   const userId = await getUserId(req);
