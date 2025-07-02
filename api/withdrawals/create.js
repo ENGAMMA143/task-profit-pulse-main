@@ -33,7 +33,7 @@ export default async function handler(req) {
   let params = `coin=${coin}&address=${address}&amount=${amount}&timestamp=${timestamp}`;
   if (tag) params += `&addressTag=${tag}`;
 
-  const signature = crypto.createHmac('sha256', process.env.BINANCE_SECRET_KEY)
+  const signature = crypto.createHmac('sha256', process.env.BINANCE_API_SECRET)
     .update(params).digest('hex');
 
   // أرسل طلب السحب إلى Binance
