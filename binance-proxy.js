@@ -1,32 +1,29 @@
 // pages/api/binance-proxy.js
 export const config = {
-  runtime: 'edge',
-  regions: ['fra1'],  // فرانكفورت، ألمانيا
+  runtime: 'edge',        // مهم: ليعمل كـ Edge Function
+  regions: ['fra1'],      // فرانكفورت
 };
 
 export default async function handler(req) {
-  const url = new URL(req.url);
-  // استبدل host/path حسب نقطة النهاية المطلوبة في Binance
-  url.hostname = 'api.binance.com';
-  url.pathname = '/api/v3/' + url.searchParams.get('endpoint');
+  const { searchParams } = new URL(req.url);
+  const endpoint = searchParams.get('endpoint') || 'ping';
 
-  const response = await fetch(url.toString(), {
+  const url = `https://api.binance.com/api/v3/${endpoint}`;
+  const response = await fetch(url, {
     method: req.method,
     headers: {
-      // أنقل أي رؤوس ضرورية، مثل API-KEY
       'X-MBX-APIKEY': process.env.BINANCE_API_KEY,
     },
     body: req.body,
   });
 
-  // أضف CORS إذا أردت استدعاءه من المتصفح مباشرة
-  const res = new Response(await response.text(), {
+  const text = await response.text();
+  return new Response(text, {
     status: response.status,
     headers: {
-      ...Object.fromEntries(response.headers),
+      'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     },
   });
-  return res;
 }
