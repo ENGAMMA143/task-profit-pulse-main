@@ -1,50 +1,73 @@
 // poll-deposits.cjs
+
+// نستخدم CommonJS لأن package.json يحدد "type": "module"
 const fetch = require('node-fetch');
 const crypto = require('crypto');
 const { Spot } = require('@binance/connector');
+const { createClient } = require('@supabase/supabase-js');
 
-// تهيئة عميل Binance
+// 1. تهيئة عملاء Binance و Supabase
 const binance = new Spot(
   process.env.BINANCE_API_KEY,
   process.env.BINANCE_API_SECRET
 );
 
-let lastTxId = null; // سيتذكر المعاملة الأخيرة المعالجة
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// 2. سنحتفظ بالـ txId الأخير حتى لا نكرر المعالجة
+let lastTxId = null;
 
 async function pollDeposits() {
   try {
-    // استعلام سجل الإيداعات لـ USDT
+    // 3. استعلام سجل الإيداعات من Binance (USDT مثلاً)
     const res = await binance.depositHistory('USDT');
     const deposits = res.data || [];
-    // نرتبها من الأقدم للأحدث
     deposits.sort((a, b) => a.insertTime - b.insertTime);
 
     for (const dep of deposits) {
-      // نتوقف إن وصلنا للمعاملة الأخيرة التي عالجناها بالفعل
-      if (dep.txId === lastTxId) break;
-      // نتخطى غير المؤكدة
-      if (dep.status !== 1) continue; // 1 = SUCCESS
+      if (dep.txId === lastTxId) break;        // نتوقف إن وصلنا لما سبق معالجته
+      if (dep.status !== 1) continue;          // نتخطى غير المؤكدة (1 = SUCCESS)
 
-      // بناء payload واجهة الويب هوك
+      const { coin, amount, address, txId } = dep;
+
+      // 4. استعلام Supabase لجدول user_deposit_addresses حسب العنوان + العملة
+      const { data: addrRow, error: addrError } = await supabase
+        .from('user_deposit_addresses')
+        .select('user_id')
+        .eq('address', address)
+        .eq('coin', coin)
+        .single();
+
+      if (addrError || !addrRow) {
+        console.warn(`Address not found in DB: ${address}`);
+        lastTxId = txId;  // نحدّث الأخير حتى لا نحاولها مجدداً
+        continue;
+      }
+
+      const userId = addrRow.user_id;
+
+      // 5. بناء payload ويب هوك
       const payload = {
         eventType: 'deposit',
         eventStatus: 'SUCCESS',
-        coin: dep.coin,
-        amount: dep.amount,
-        address: dep.address,
-        txId: dep.txId,
-        // هنا: ضع طريقتك لاسترجاع userId بناءً على العنوان
-        userId: '<<USER_ID_FROM_DB>>'
+        coin,
+        amount,
+        address,
+        txId,
+        userId
       };
       const body = JSON.stringify(payload);
 
-      // توقيع HMAC للتحقق
+      // 6. توقيع HMAC للتحقق
       const signature = crypto
         .createHmac('sha256', process.env.BINANCE_WEBHOOK_SECRET)
         .update(body)
         .digest('hex');
 
-      // إرسال إلى endpoint في Vercel
+      // 7. إرسال إلى endpoint في Vercel
       await fetch(process.env.WEBHOOK_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -54,15 +77,16 @@ async function pollDeposits() {
         body
       });
 
-      // حدّث آخر TxId
-      lastTxId = dep.txId;
+      console.log(`✅ Forwarded deposit ${txId} for user ${userId}`);
+
+      // 8. حدّث آخر TxId حتى لا نكرر
+      lastTxId = txId;
     }
   } catch (err) {
     console.error('Polling error:', err);
   }
 }
 
-// شغّل poll كل 60 ثانية
+// 9. جدولة Polling كل دقيقة
 setInterval(pollDeposits, 60 * 1000);
-// وشغل أول دورة فوراً
 pollDeposits();
