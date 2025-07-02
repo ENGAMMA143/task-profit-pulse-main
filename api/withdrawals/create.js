@@ -1,8 +1,14 @@
 // api/withdrawals/create.js
 export const config = { runtime: 'edge', regions: ['fra1'] };
-
-import { supabase, getUserId } from '../../src/lib/supabase';
 import { webcrypto } from 'node:crypto';
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY
+);
+
 const crypto = webcrypto;
 export default async function handler(req) {
   if (req.method !== 'POST') return new Response(null, { status: 405 });
