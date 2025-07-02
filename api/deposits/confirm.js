@@ -1,5 +1,5 @@
 // api/deposits/confirm.js
-export const config = { runtime: 'edge', regions: ['fra1'] };
+export const runtime = 'nodejs';
 
 import { createClient } from '@supabase/supabase-js';
 
