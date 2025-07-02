@@ -2,8 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://sntwhrjgzjrxicnejjvh.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNudHdocmpnempyeGljbmVqanZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNzkyNDIsImV4cCI6MjA2Njk1NTI0Mn0.Rodfo0M3-Rfa8b_WmmxsS35VxatmQ5quQuD1S8NHD4c";
+// قراءة المتغيرات من البيئة
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_ANON_KEY!;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
