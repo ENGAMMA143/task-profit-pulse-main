@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Copy, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import { Loader2, Copy, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface DepositFormProps {
@@ -22,25 +22,27 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
   const [addressCopied, setAddressCopied] = useState(false);
   const [depositStep, setDepositStep] = useState<'select-level' | 'copy-address' | 'confirm-deposit' | 'processing'>('select-level');
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [checkingDeposit, setCheckingDeposit] = useState(false);
+  const [realDepositAddress, setRealDepositAddress] = useState('');
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const binanceDepositAddress = "TQn9Y2khEsLJqJrUjXxoJ5KUdq8J7X8XQv"; // Example USDT TRC20 address
-
+  // جلب بروفايل المستخدم
   useEffect(() => {
-    fetchUserProfile();
+    if (user?.id) fetchUserProfile();
   }, [user]);
 
+  // تحديث مستوى الاستثمار ومرحلة الإيداع حسب بيانات البروفايل
   useEffect(() => {
     if (userProfile?.current_level && !level) {
       setLevel(userProfile.current_level);
       setDepositStep('copy-address');
+      fetchDepositAddress(userProfile.current_level);
     } else if (!userProfile?.current_level && !level) {
       setDepositStep('select-level');
     }
   }, [userProfile, level]);
 
+  // جلب البروفايل من supabase
   const fetchUserProfile = async () => {
     try {
       const { data, error } = await supabase
@@ -56,6 +58,42 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
     }
   };
 
+  // جلب عنوان الإيداع الحقيقي من API الخاص بالخادم (backend)
+  const fetchDepositAddress = async (selectedLevel: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/get-deposit-address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          coin: 'USDT',
+          network: 'TRC20',
+          level: selectedLevel,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to fetch deposit address');
+      }
+
+      const data = await response.json();
+      setRealDepositAddress(data.address);
+    } catch (error: any) {
+      setError(error.message);
+      toast({
+        title: 'Error fetching address',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // تفاصيل كل مستوى استثمار
   const getLevelDetails = (levelName: string) => {
     switch (levelName) {
       case 'bronze':
@@ -69,6 +107,7 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
     }
   };
 
+  // عند اختيار مستوى الاستثمار والضغط على متابعة
   const handleLevelSelection = () => {
     if (!level) {
       setError('Please select a level before proceeding');
@@ -76,30 +115,30 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
     }
     setError('');
     setDepositStep('copy-address');
+    fetchDepositAddress(level);
   };
 
+  // نسخ العنوان إلى الحافظة
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setAddressCopied(true);
       toast({
-        title: "Address Copied!",
-        description: "Binance deposit address has been copied to your clipboard.",
+        title: 'Address Copied!',
+        description: 'Binance deposit address has been copied to your clipboard.',
       });
-      
-      // Auto-advance to next step after copying
-      setTimeout(() => {
-        setDepositStep('confirm-deposit');
-      }, 1500);
+      // التقدم تلقائياً إلى الخطوة التالية
+      setTimeout(() => setDepositStep('confirm-deposit'), 1500);
     } catch (error) {
       toast({
-        title: "Copy Failed",
-        description: "Please manually copy the address.",
-        variant: "destructive"
+        title: 'Copy Failed',
+        description: 'Please manually copy the address.',
+        variant: 'destructive',
       });
     }
   };
 
+  // تأكيد الإيداع — يُنشئ سجل الإيداع في قاعدة البيانات
   const handleDepositConfirmation = async () => {
     if (!addressCopied) {
       setError('Please copy the deposit address first');
@@ -112,8 +151,6 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
 
     try {
       const levelDetails = getLevelDetails(level);
-      
-      // Create deposit record
       const { error: depositError } = await supabase
         .from('deposits')
         .insert({
@@ -121,115 +158,26 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
           amount: levelDetails.min,
           level_requested: level as 'bronze' | 'silver' | 'gold',
           status: 'pending',
-          binance_address: binanceDepositAddress,
-          amount_expected: levelDetails.min
+          binance_address: realDepositAddress,
+          amount_expected: levelDetails.min,
         });
 
       if (depositError) throw depositError;
 
-      // Start checking for deposit confirmation
-      setCheckingDeposit(true);
-      checkDepositStatus();
+      toast({
+        title: 'Deposit Initiated',
+        description: 'Please send your funds. We will confirm your deposit shortly.',
+      });
 
+      // انتظار تأكيد الإيداع عبر webhook في الخلفية — لا استدعاء تحقق متكرر هنا
+
+      setSuccess(true);
+      onDepositSuccess();
     } catch (error: any) {
       setError(error.message);
       setDepositStep('confirm-deposit');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const checkDepositStatus = async () => {
-    // Simulate Binance API check (in real implementation, this would call Binance API)
-    const checkInterval = setInterval(async () => {
-      try {
-        // Simulate random deposit confirmation after 10-30 seconds
-        const randomDelay = Math.random() * 20000 + 10000;
-        
-        setTimeout(async () => {
-          const depositConfirmed = Math.random() > 0.3; // 70% success rate for demo
-          
-          if (depositConfirmed) {
-            // Update user profile with new level and balance
-            const levelDetails = getLevelDetails(level);
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({
-                current_level: level,
-                current_balance: levelDetails.min,
-                total_deposited: levelDetails.min
-              })
-              .eq('id', user?.id);
-
-            if (updateError) throw updateError;
-
-            // Update deposit status
-            await supabase
-              .from('deposits')
-              .update({ status: 'confirmed' })
-              .eq('user_id', user?.id)
-              .eq('status', 'pending');
-
-            // Enable tasks for user
-            await enableUserTasks();
-
-            setSuccess(true);
-            setCheckingDeposit(false);
-            clearInterval(checkInterval);
-            
-            toast({
-              title: "Deposit Confirmed!",
-              description: "Your deposit has been confirmed. Tasks are now available!",
-            });
-
-            onDepositSuccess();
-          } else {
-            setError('Deposit not confirmed. Please check your transaction and try again.');
-            setCheckingDeposit(false);
-            setDepositStep('confirm-deposit');
-            clearInterval(checkInterval);
-          }
-        }, randomDelay);
-
-      } catch (error: any) {
-        setError(error.message);
-        setCheckingDeposit(false);
-        setDepositStep('confirm-deposit');
-        clearInterval(checkInterval);
-      }
-    }, 5000);
-
-    // Stop checking after 5 minutes
-    setTimeout(() => {
-      clearInterval(checkInterval);
-      if (checkingDeposit) {
-        setError('Deposit confirmation timeout. Please contact support.');
-        setCheckingDeposit(false);
-        setDepositStep('confirm-deposit');
-      }
-    }, 300000);
-  };
-
-  const enableUserTasks = async () => {
-    try {
-      const levelDetails = getLevelDetails(level);
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Create daily tasks for the user
-      for (let i = 1; i <= 10; i++) {
-        await supabase
-          .from('daily_tasks')
-          .insert({
-            user_id: user?.id,
-            task_number: i,
-            date: today,
-            status: 'available',
-            earnings: Math.random() * (levelDetails.max - levelDetails.min) + levelDetails.min,
-            available_at: new Date().toISOString()
-          });
-      }
-    } catch (error) {
-      console.error('Error enabling tasks:', error);
     }
   };
 
@@ -240,7 +188,9 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
       <Card className="dark:bg-gray-900 dark:border-gray-700">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-            <Loader2 className={`h-5 w-5 ${depositStep === 'processing' ? 'animate-spin' : 'hidden'} text-gray-900 dark:text-gray-100`} />
+            <Loader2
+              className={`h-5 w-5 ${depositStep === 'processing' ? 'animate-spin' : 'hidden'} text-gray-900 dark:text-gray-100`}
+            />
             Make a Deposit
           </CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
@@ -251,7 +201,6 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          
           {/* Step 1: Level Selection */}
           {depositStep === 'select-level' && (
             <div className="space-y-4">
@@ -263,7 +212,9 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
               </Alert>
 
               <div className="space-y-2">
-                <Label htmlFor="level" className="text-gray-700 dark:text-gray-300">Select Investment Level *</Label>
+                <Label htmlFor="level" className="text-gray-700 dark:text-gray-300">
+                  Select Investment Level *
+                </Label>
                 <Select value={level} onValueChange={setLevel} required>
                   <SelectTrigger className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
                     <SelectValue placeholder="Choose your investment level" />
@@ -277,8 +228,12 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
               </div>
 
               {selectedLevelDetails && (
-                <div className={`bg-${selectedLevelDetails.color}-50 p-4 rounded-lg border border-${selectedLevelDetails.color}-200 dark:bg-${selectedLevelDetails.color}-950 dark:border-${selectedLevelDetails.color}-700`}>
-                  <h4 className={`font-semibold text-${selectedLevelDetails.color}-900 mb-2 dark:text-${selectedLevelDetails.color}-200`}>
+                <div
+                  className={`bg-${selectedLevelDetails.color}-50 p-4 rounded-lg border border-${selectedLevelDetails.color}-200 dark:bg-${selectedLevelDetails.color}-950 dark:border-${selectedLevelDetails.color}-700`}
+                >
+                  <h4
+                    className={`font-semibold text-${selectedLevelDetails.color}-900 mb-2 dark:text-${selectedLevelDetails.color}-200`}
+                  >
                     Selected Level: {level.toUpperCase()}
                   </h4>
                   <p className={`text-sm text-${selectedLevelDetails.color}-800 dark:text-${selectedLevelDetails.color}-300`}>
@@ -310,13 +265,14 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
                 <h3 className="font-semibold text-blue-900 mb-2 dark:text-blue-100">Binance Deposit Address (USDT TRC20)</h3>
                 <div className="flex items-center space-x-2">
                   <code className="bg-white px-3 py-2 rounded border flex-1 text-sm font-mono break-all whitespace-normal dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700">
-                    {binanceDepositAddress}
+                    {loading ? 'Loading address...' : realDepositAddress}
                   </code>
                   <Button
-                    variant={addressCopied ? "default" : "outline"}
+                    variant={addressCopied ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => copyToClipboard(binanceDepositAddress)}
-                    className={addressCopied ? "bg-green-600 hover:bg-green-700" : ""}
+                    onClick={() => copyToClipboard(realDepositAddress)}
+                    disabled={loading || !realDepositAddress}
+                    className={addressCopied ? 'bg-green-600 hover:bg-green-700' : ''}
                   >
                     {addressCopied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
@@ -327,8 +283,12 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
               </div>
 
               {selectedLevelDetails && (
-                <div className={`bg-${selectedLevelDetails.color}-50 p-4 rounded-lg border border-${selectedLevelDetails.color}-200 dark:bg-${selectedLevelDetails.color}-950 dark:border-${selectedLevelDetails.color}-700 dark:text-${selectedLevelDetails.color}-200`}>
-                  <h4 className={`font-semibold text-${selectedLevelDetails.color}-900 mb-2 dark:text-${selectedLevelDetails.color}-100`}>
+                <div
+                  className={`bg-${selectedLevelDetails.color}-50 p-4 rounded-lg border border-${selectedLevelDetails.color}-200 dark:bg-${selectedLevelDetails.color}-950 dark:border-${selectedLevelDetails.color}-700 dark:text-${selectedLevelDetails.color}-200`}
+                >
+                  <h4
+                    className={`font-semibold text-${selectedLevelDetails.color}-900 mb-2 dark:text-${selectedLevelDetails.color}-100`}
+                  >
                     Deposit Instructions for {level.toUpperCase()} Level
                   </h4>
                   <p className={`text-sm text-${selectedLevelDetails.color}-800 dark:text-${selectedLevelDetails.color}-300`}>
@@ -364,6 +324,13 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
                 </ul>
               </div>
 
+              {error && (
+                <Alert className="border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-950 dark:text-red-200">
+                  <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
               <Button onClick={handleDepositConfirmation} className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Confirm Deposit Sent
@@ -373,10 +340,24 @@ export const DepositForm = ({ onDepositSuccess, selectedLevel }: DepositFormProp
 
           {/* Step 4: Processing */}
           {depositStep === 'processing' && (
-            <div className="space-y-4">
-              <div className="text-center py-8">
-                <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600 dark:text-blue-400 mb-4" />
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-200">Checking Your Deposit...</h3>
-                <p className="text-gray-600 mb-4 dark:text-gray-400">
-                  We're verifying your deposit with Binance. This usually takes 1-5 
-(Content truncated due to size limit. Use line ranges to read in chunks)
+            <div className="text-center py-8">
+              <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600 dark:text-blue-400 mb-4" />
+              <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-200">Processing Your Deposit</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Please wait while we confirm your deposit via our secure system. This may take a few minutes.
+              </p>
+            </div>
+          )}
+
+          {/* Success message */}
+          {success && (
+            <Alert className="border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-950 dark:text-green-200">
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <AlertDescription>Your deposit has been successfully initiated!</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
