@@ -1,12 +1,12 @@
 {
-"name": "vite\_react\_shadcn\_ts",
+"name": "vite_react_shadcn_ts",
 "private": true,
 "version": "0.0.0",
 "type": "module",
 "scripts": {
 "dev": "vite",
 "build": "vite build",
-"build\:dev": "vite build --mode development",
+"build:dev": "vite build --mode development",
 "lint": "eslint .",
 "preview": "vite preview",
 "listen-binance": "node ws-listener.js"
