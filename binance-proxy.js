@@ -8,7 +8,7 @@ export default async function handler(req) {
   const { searchParams } = new URL(req.url);
   const endpoint = searchParams.get('endpoint') || 'ping';
 
-  const url = `https://api.binance.com/v3/${endpoint}`;
+  const url = `https://api.binance.com/${endpoint}`;
   const response = await fetch(url, {
     method: req.method,
     headers: {
