@@ -146,16 +146,18 @@ export const WithdrawForm = ({ currentBalance }: WithdrawFormProps) => {
       }
 
       // Create withdrawal request
-      const { error: withdrawError } = await supabase
-        .from('withdrawals')
-        .insert({
-          user_id: user?.id,
-          amount: withdrawAmount,
-          fee_amount: fee,
-          net_amount: netAmount,
-          withdrawal_address: withdrawalAddress,
-          status: 'pending'
-        });
+     const response = await fetch('/api/create-withdrawal-request', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    userId: user?.id,
+    amount: withdrawAmount,
+    address: withdrawalAddress
+  })
+});
+const result = await response.json();
+if (!response.ok) throw new Error(result.error || 'Failed to process withdrawal');
+
 
       if (withdrawError) throw withdrawError;
 
