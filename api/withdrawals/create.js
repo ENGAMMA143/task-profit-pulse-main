@@ -2,8 +2,8 @@
 export const config = { runtime: 'edge', regions: ['fra1'] };
 
 import { supabase, getUserId } from '../../src/lib/supabase';
-import crypto from 'crypto';
-
+import { webcrypto } from 'node:crypto';
+const crypto = webcrypto;
 export default async function handler(req) {
   if (req.method !== 'POST') return new Response(null, { status: 405 });
   const userId = await getUserId(req);
